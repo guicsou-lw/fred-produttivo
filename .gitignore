@@ -1,0 +1,9 @@
+node_modules
+/config.js
+/public
+/data
+/kubernetes
+.env
+token.json
+token_gui.json
+token_fred.json

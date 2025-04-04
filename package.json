@@ -1,0 +1,40 @@
+{
+    "name": "api-boilerplate",
+    "version": "0.1.0",
+    "description": "",
+    "license": "WTFPL",
+    "main": "index.js",
+    "scripts": {
+        "start": "node index.js",
+        "dev": "NODE_ENV=development nodemon ./index.js"
+    },
+    "nodemonConfig": {
+        "ext": "js",
+        "ignore": [
+            "logs/",
+            "tokens/"
+        ],
+        "watch": [
+            "src/",
+            "index.js"
+        ]
+    },
+    "dependencies": {
+        "axios": "^0.24.0",
+        "cors": "^2.8.5",
+        "custom-env": "^2.0.1",
+        "express": "^4.17.1",
+        "googleapis": "^100.0.0",
+        "https": "^1.0.0",
+        "lodash": "^4.17.21",
+        "moment": "^2.29.2",
+        "morgan": "^1.10.0",
+        "morgan-body": "^2.6.6",
+        "node-cron": "^3.0.0",
+        "path": "^0.12.7",
+        "puppeteer": "^13.3.0"
+    },
+    "devDependencies": {
+        "nodemon": "^2.0.13"
+    }
+}
