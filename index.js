@@ -1,6 +1,6 @@
 // require('custom-env').env();
 
-import { GetAll, parseAndSend } from "./src/services/produttivo/service.js"
+import { GetAll, parseAndSend, GetFormFills } from "./src/services/produttivo/service.js"
 
 // const {
 //   PORT,
@@ -33,9 +33,8 @@ import { GetAll, parseAndSend } from "./src/services/produttivo/service.js"
 
 
 export async function getAll(req, res, next) {
-  console.log("get all?")
   try {
-    await parseAndSend(await GetAll('/works'), 'works')
+    /*await parseAndSend(await GetAll('/works'), 'works')
     await parseAndSend(await GetAll('/work_plans'), 'work_plans')
     await parseAndSend(await GetAll('/resource_places'), 'resource_places')
     await parseAndSend(await GetAll('/forms'), 'forms')
@@ -43,8 +42,9 @@ export async function getAll(req, res, next) {
     await parseAndSend(await GetAll('/projects'), 'projects')
     await parseAndSend(await GetAll('/services'), 'services')
     await parseAndSend(await GetAll('/tickets'), 'tickets')
-    await parseAndSend(await GetAll('/satisfaction_surveys'), 'satisfaction_surveys')
+    await parseAndSend(await GetAll('/satisfaction_surveys'), 'satisfaction_surveys')*/
     //await parseAndSend(await GetAll('/form_fills'), 'form_fills')
+    await GetFormFills()
 
     console.log("Finalizado")
     return true

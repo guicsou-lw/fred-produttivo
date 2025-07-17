@@ -16,7 +16,7 @@ export async function getAll(req, res, next) {
     await produttivo_service.parseAndSend(await produttivo_service.GetAll('/services'), 'services')
     await produttivo_service.parseAndSend(await produttivo_service.GetAll('/tickets'), 'tickets')
     await produttivo_service.parseAndSend(await produttivo_service.GetAll('/satisfaction_surveys'), 'satisfaction_surveys')
-    //await produttivo_service.parseAndSend(await produttivo_service.GetAll('/form_fills'), 'form_fills')
+    await produttivo_service.parseAndSend(await produttivo_service.GetAll('/form_fills'), 'form_fills')
 
     return res.status(200).json(work_plans)
   } catch (err) { return next(err) }
