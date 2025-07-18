@@ -126,8 +126,9 @@ async function GetAll(endpoint, from_page = 1) {
       })).data;
       data.push(...response.results);
 
+
       for (const result of response.results) {
-        if (result.field_values.length > 0) {
+        if (result?.field_values?.length > 0) {
           const field_value = result.field_values.find(field => field.attachments.length > 1);
           if (field_value) {
             console.log(field_value)
@@ -156,6 +157,11 @@ async function GetFormFills() {
   let field_values_sheet;
   let attachment_value_sheet;
 
+  // Track row numbers incrementally to avoid API calls
+  let currentRow = 1;
+  let currentFormFillRow = 1;
+  let currentAttachmentRow = 1;
+
   const endpoint = '/form_fills'
   const sheet_name = 'form_fills'
   const url = `${base_url}${endpoint}`;
@@ -183,6 +189,7 @@ async function GetFormFills() {
         sheet = new GoogleSheets(SPREADSHEET_ID, 'form_fills', [...keys, 'coletado em']);
         await sheet.init()
         await sheet.clearAll()
+        currentRow = 1; // Reset row counter after clearing
       }
 
       // Send page data to google sheet
@@ -194,12 +201,13 @@ async function GetFormFills() {
       }
       );
 
-      const lastRow = await sheet.getLastRow(sheet_name);
-      const rangeValues = [spreadsheetRangeValue(data_values, `${sheet_name}!A${lastRow}`)];
+      const rangeValues = [spreadsheetRangeValue(data_values, `${sheet_name}!A${currentRow}`)];
 
       try {
         await sheet.batchUpdateValues(rangeValues);
         console.log('\n==== dados enviados para o Google Sheets ====')
+        // Update row counter for next page
+        currentRow += data_values.length;
       }
       catch (error) { throw (new Error('Dados não enviados para a planilha')) }
 
@@ -207,13 +215,14 @@ async function GetFormFills() {
       let data_field_value_attachments = [];
 
       for (const result of response.results) {
-        if (result.field_values.length > 0) {
+        if (result.field_values && result.field_values.length > 0) {
           if (!field_values_sheet) {
             const field_values_keys = Object.keys(result.field_values[0]);
 
             field_values_sheet = new GoogleSheets(SPREADSHEET_ID, 'form_fill_values', [...field_values_keys, 'coletado em', 'form_fill_id']);
             await field_values_sheet.init()
             await field_values_sheet.clearAll()
+            currentFormFillRow = 1; // Reset row counter after clearing
           }
 
           data_field_values.push(...result.field_values?.map(element => {
@@ -225,12 +234,13 @@ async function GetFormFills() {
           ));
 
           for (const field_value of result.field_values) {
-            if (field_value.attachments.length > 0) {
+            if (field_value.attachments && field_value.attachments.length > 0) {
               if (!attachment_value_sheet) {
                 const attachment_value_keys = Object.keys(field_value.attachments[0]);
                 attachment_value_sheet = new GoogleSheets(SPREADSHEET_ID, 'form_fill_value_attachments', [...attachment_value_keys, 'coletado em', 'form_fill_id', 'form_fill_value_id']);
                 await attachment_value_sheet.init()
                 await attachment_value_sheet.clearAll()
+                currentAttachmentRow = 1; // Reset row counter after clearing
               }
 
               data_field_value_attachments.push(...field_value.attachments?.map(element => {
@@ -249,27 +259,31 @@ async function GetFormFills() {
         }
       }
 
-      const lastFormFillRow = await field_values_sheet.getLastRow('form_fill_values');
-      const formFillRangeValues = [spreadsheetRangeValue(data_field_values, `form_fill_values!A${lastFormFillRow}`)];
+      const formFillRangeValues = [spreadsheetRangeValue(data_field_values, `form_fill_values!A${currentFormFillRow}`)];
 
       try {
         await field_values_sheet.batchUpdateValues(formFillRangeValues);
         console.log('\n==== dados enviados para o Google Sheets ====')
+
+        // Update row counter for next batch
+        currentFormFillRow += data_field_values.length;
       }
       catch (error) { throw (new Error('Dados não enviados para a planilha')) }
 
-      const lastAttachmentRow = await attachment_value_sheet.getLastRow('form_fill_value_attachments');
-      const attachmentRangeValues = [spreadsheetRangeValue(data_field_value_attachments, `form_fill_value_attachments!A${lastAttachmentRow}`)];
+      const attachmentRangeValues = [spreadsheetRangeValue(data_field_value_attachments, `form_fill_value_attachments!A${currentAttachmentRow}`)];
 
       try {
         await attachment_value_sheet.batchUpdateValues(attachmentRangeValues);
         console.log('\n==== dados enviados para o Google Sheets ====')
+
+        // Update row counter for next batch
+        currentAttachmentRow += data_field_value_attachments.length;
       }
       catch (error) { throw (new Error('Dados não enviados para a planilha')) }
 
       page++; //next page
 
-      if (!total_pages || page > total_pages || page > 10) break;
+      if (!total_pages || page > total_pages) break;
     }
     while (true);
 

@@ -40,14 +40,24 @@ class GoogleSheets {
   }
 
   async getLastRow(sheetName) {
+    try {
+      const response = await this.append([], `${sheetName}!A1`);
 
-    const { updates } = await this.append([], `${sheetName}!A1`);
-
-    return updates.updatedRange.match(/\d+/g)[0];
+      if (response && response.updates && response.updates.updatedRange) {
+        return response.updates.updatedRange.match(/\d+/g)[0];
+      } else {
+        // If we can't get the last row, assume it's 1 (empty sheet)
+        return "1";
+      }
+    } catch (error) {
+      console.log('Could not get last row, assuming sheet is empty');
+      return "1";
+    }
   }
 
   async append(values, range, options = {}) {
     let retries = 1;
+    const maxRetries = 10;
 
     const auth = this.auth;
     const spreadsheetId = this.spreadsheetId;
@@ -76,11 +86,25 @@ class GoogleSheets {
 
         return response
       } catch (err) {
+        console.error(`Error on attempt ${retries}:`, err.message);
+
+        // Check if it's a rate limit error (429)
+        if (err.code === 429 || (err.response && err.response.status === 429)) {
+          const waitTime = Math.min(60 * 1000 * Math.pow(2, retries - 1), 300 * 1000); // Exponential backoff, max 5 minutes
+          console.log(`Rate limit exceeded. Waiting ${waitTime / 1000} seconds before retry...`);
+          await new Promise(resolve => setTimeout(resolve, waitTime));
+        } else {
+          console.log('Attempt to append spreadsheet values not successful!');
+        }
+
         retries++;
-        console.error(err)
-        console.log('Attempt to append spreadsheet values not sucessful!');
+
+        if (retries > maxRetries) {
+          console.error('Max retries reached. Giving up.');
+          throw err;
+        }
       }
-    } while (retries <= 10);
+    } while (retries <= maxRetries);
   }
 
   async batchUpdateSheet(requests, options = {}) {
@@ -166,6 +190,7 @@ class GoogleSheets {
 
   async batchUpdateValues(data, options = {}) {
     let retries = 1;
+    const maxRetries = 10;
 
     const auth = this.auth;
     const spreadsheetId = this.spreadsheetId;
@@ -194,11 +219,25 @@ class GoogleSheets {
 
         return response;
       } catch (err) {
+        console.error(`Error on attempt ${retries}:`, err.message);
+
+        // Check if it's a rate limit error (429)
+        if (err.code === 429 || (err.response && err.response.status === 429)) {
+          const waitTime = Math.min(60 * 1000 * Math.pow(2, retries - 1), 300 * 1000); // Exponential backoff, max 5 minutes
+          console.log(`Rate limit exceeded. Waiting ${waitTime / 1000} seconds before retry...`);
+          await new Promise(resolve => setTimeout(resolve, waitTime));
+        } else {
+          console.log('Attempt to batchUpdateValues not successful!');
+        }
+
         retries++;
-        console.error(err);
-        throw (new Error('Attempt to batchUpdateValues not sucessful!'))
+
+        if (retries > maxRetries) {
+          console.error('Max retries reached. Giving up.');
+          throw new Error('Attempt to batchUpdateValues not successful!');
+        }
       }
-    } while (retries <= 10);
+    } while (retries <= maxRetries);
   }
 
   async getSheetID(sheetName, options = {}) {
